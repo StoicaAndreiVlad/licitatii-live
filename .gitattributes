@@ -1,0 +1,5 @@
+# Terminații de linie uniforme (LF) pentru toată echipa, indiferent de sistemul de operare.
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.sqlite binary
