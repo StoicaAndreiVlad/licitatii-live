@@ -278,7 +278,7 @@ sequenceDiagram
     API->>S: placeBid(auctionId, bidderId, amount)
     S->>DB: BEGIN IMMEDIATE (lock de scriere)
     S->>DB: SELECT auction; now = clock.now()
-    S->>S: evaluateBid(auction, amount, bidder, now) (funcție pură)
+    S->>S: evaluateBid(auction, {bidderId, amount, role}, now) (funcție pură)
     alt ofertă validă
         S->>DB: UPDATE Auctions SET currentPrice, leaderId, version=version+1 WHERE id=? AND version=? AND status='ACTIVE' AND endsAt>?
         S->>DB: INSERT Bid (ACCEPTED, seq=version+1)
