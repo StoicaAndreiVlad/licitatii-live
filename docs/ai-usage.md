@@ -36,7 +36,15 @@ verificările → diagnostichează → reparație țintită → verifică → ex
 
 ### Caz 1 — Stoica Andrei-Vlad
 
-_de completat_
+| Câmp | Conținut |
+|---|---|
+| Student | Stoica Andrei-Vlad |
+| Cerință | Generarea documentației de analiză/design pentru M1 și pregătirea primului commit în repozitoriu. |
+| Intervenția agentului | Agentul (Claude Code) a creat documentele pachetelor arhitecturale în `docs/packages/`, cu numele `con.md` și `rtm.md` (după ID-urile pachetelor din catalog). |
+| Inspecție | La pregătirea primului commit, `git add .` a eșuat cu `error: open("docs/packages/con.md"): No such file or directory` / `unable to index file`, deși fișierul apărea în listarea folderului. |
+| Defect / limitare găsită | Pe Windows, `CON` (ca și `PRN`, `AUX`, `NUL`, `COM1`…) este nume rezervat de dispozitiv, inclusiv cu extensie. Fișierul putea fi creat prin anumite API-uri, dar nu putea fi deschis de Git și de alte unelte Windows. Pe Linux/macOS problema nu ar fi apărut, deci ar fi afectat doar membrii echipei care lucrează pe Windows. |
+| Remediere | Fișierele au fost redenumite `con-concurenta.md` și `rtm-timp-real.md` (păstrând simetria), iar toate link-urile din README, ADR-uri, `architecture.md` și `testing.md` au fost actualizate; o căutare a confirmat că nu a mai rămas niciun link spre vechile nume. |
+| Rezultat | `git add` a reușit; primul commit conține 36 de fișiere și toate link-urile din documentație funcționează. Lecție: numele generate de agent trebuie verificate și pentru portabilitate între sisteme de operare, nu doar pentru conținut. |
 
 ### Caz 2 — Stoian Erik
 
