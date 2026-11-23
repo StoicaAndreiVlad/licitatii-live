@@ -29,7 +29,7 @@
 | # | Strategie | Descriere | Evaluare |
 |---|---|---|---|
 | R1 | Aplicare oarbă | fiecare eveniment suprascrie starea | evenimentele în ordine inversă lasă un preț vechi pe ecran — **respins** |
-| R2 | **Ordonare după `seq`** | aplică doar `seq = lastSeq + 1`; ignoră `seq ≤ lastSeq`; gol ⇒ resincronizare | determinist, simplu de testat ca funcție pură (reducer) |
+| R2 | **Ordonare după `seq`** | aplică doar `seq = lastSeq + 1`; ignoră `seq ≤ lastSeq`; la gol (`seq > lastSeq + 1`) evenimentul nu se aplică, iar `needsResync = true` | determinist, simplu de testat ca funcție pură (reducer) |
 | R3 | Reluare de evenimente din jurnal | serverul păstrează toate evenimentele și le retrimite după `lastSeq` | complet, dar necesită tabel de evenimente (apropiat de pachetul AUD) |
 | R4 | **Instantaneu la reconectare** | după reconectare sau gol, clientul cere starea curentă (`snapshot`, cu `version`) + istoricul `afterSeq` din REST | robust, fără jurnal suplimentar; un singur cod de reconciliere |
 
@@ -40,7 +40,7 @@
 - Socket.IO doar pentru notificări server → client; scrierile rămân pe REST (o singură cale tranzacțională, compatibilă cu CON).
 - Camere: `auction:<id>` și `lobby`. Emiterea are loc după commit.
 - Reducerul clientului `applyAuctionEvent(state, event)` este o funcție pură, testată cu permutări de evenimente.
-- La `connect` (inclusiv reconectare) clientul reintră automat în camerele active și primește `snapshot`; dacă `snapshot.version > lastSeq`, starea este înlocuită și istoricul completat cu `GET /api/auctions/:id/bids?afterSeq=lastSeq`.
+- La `connect` (inclusiv reconectare) clientul reintră automat în camerele active și primește `snapshot`; dacă `snapshot.version ≥ lastSeq`, starea este înlocuită, `needsResync` devine `false` și istoricul este completat cu `GET /api/auctions/:id/bids?afterSeq=lastSeq`; un instantaneu cu `version < lastSeq` este ignorat.
 - SSE (C) rămâne alternativa principală; ADR-ul documentează de ce nu a fost ales.
 
 ## 5. Verificări obligatorii planificate
@@ -49,7 +49,7 @@
 |---|---|---|
 | RTM-1 | 20 clienți Socket.IO autentificați în aceeași cameră; se plasează 100 de oferte | fiecare client primește toate evenimentele `bid:accepted`; starea finală la cei 20 = starea din DB; întârziere p50/p95/max raportată (țintă p95 ≤ 300 ms) |
 | RTM-2 | Reconectare: clientul X este deconectat forțat, se acceptă 3 oferte, X revine | după reconectare `X.version = DB.version`, `X.currentPrice = DB.currentPrice`, istoricul complet; UI a arătat „Reconectare…” |
-| RTM-3 | Ordine diferită: evenimentele `seq = 5, 7, 6` (și duplicat `6`) aplicate reducerului | starea finală corespunde `seq = 7`; `seq = 6` sosit după `7` este ignorat sau declanșează resincronizare, nu regres; test unitar + test de integrare cu întârziere injectată în gateway |
+| RTM-3 | Ordine diferită: evenimentele `seq = 5, 7, 6` (și duplicat `6`) aplicate reducerului | `seq = 7` nu se aplică (gol): starea rămâne la `seq = 5` și `needsResync = true`; după instantaneul cu `version = 7` starea corespunde `seq = 7`, iar `seq = 6` sosit după el este ignorat (`seq ≤ lastSeq`); fără regres de stare; test unitar + test de integrare cu întârziere injectată în gateway |
 | RTM-4 | Autorizare: conexiune fără cookie / cu JWT expirat | `connect_error` `UNAUTHENTICATED` |
 | RTM-5 | Autorizare: licitator → `auction:join` pe licitație `DRAFT` | ack `{ ok:false, error:{ code:"NOT_FOUND" } }`; nu primește evenimente |
 | RTM-6 | Client emite `bid:accepted` / `bid:place` falsificat | ignorat; nicio modificare în DB, niciun broadcast |
