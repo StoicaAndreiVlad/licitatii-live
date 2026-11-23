@@ -95,6 +95,8 @@ docs/     documentația proiectului
 
 ## Echipa și împărțirea muncii (propunere)
 
+Sarcinile detaliate, cu fișiere și commit-uri, sunt în [PLAN-ECHIPA.md](PLAN-ECHIPA.md).
+
 | Membru | Responsabilitate principală | Teste proprii |
 |---|---|---|
 | Stoica Andrei-Vlad | autentificare și roluri, obiecte, mașina de stări + planificator, filtrare/ordonare/paginare, securitate de bază | permisiuni, validare, tranziții, listări |
