@@ -52,7 +52,15 @@ _de completat_
 
 ### Caz 3 — Stilpeanu Tudor
 
-_de completat_
+| Câmp | Conținut |
+|---|---|
+| Student | Stilpeanu Tudor |
+| Cerință | Reducerul client `applyAuctionEvent(state, event)` pentru pachetul RTM: starea afișată nu are voie să regreseze când evenimentele live ajung în altă ordine sau duplicate (fișa temei: „cel puțin două evenimente sosite în ordine diferită la client”). |
+| Intervenția agentului | Propunerea generată cu Claude Code punea evenimentele „din viitor” (`seq > lastSeq + 1`) într-o listă `pending` și le aplica automat când soseau cele lipsă, cu o limită `MAX_PENDING` și resincronizare doar dacă golul persista. |
+| Inspecție | Am comparat propunerea cu analiza RTM și cu ADR-0001. Documentele spuneau „gol ⇒ resincronizare”, iar codul propus făcea altceva (buffer + aplicare întârziată). Contractul dintre document și implementare nu mai era același. |
+| Defect / limitare găsită | Nepotrivire între specificație și implementare. În plus, buffer-ul adăuga stare internă (`pending`) și cazuri-limită greu de explicat (duplicate în așteptare, depășirea limitei, interacțiunea cu instantaneul), pentru un câștig mic: serverul trimite oricum instantaneul complet la reconectare. |
+| Remediere | Am ales varianta mai simplă: la gol evenimentul nu se aplică, se setează `needsResync = true`, iar starea se reface din instantaneu (`version ≥ lastSeq`); instantaneele mai vechi și evenimentele cu `seq ≤ lastSeq` sunt ignorate. Am actualizat `docs/packages/rtm-timp-real.md` (R2, RTM-3, reconectarea) și ADR-0001 ca să descrie exact acest comportament. |
+| Rezultat | `npm test -w client` → 4/4 teste Vitest (ordine normală, gol + resincronizare, duplicat, instantaneu vechi); documentația RTM și codul spun același lucru. Commit-uri: `docs(rtm): revizuire analiză RTM și ADR-0001`, `feat(client): reconcilierea stării după seq`. Limită asumată: un tip de eveniment necunoscut nu consumă `seq`, deci declanșează o resincronizare la următorul eveniment — acceptabil, fiindcă instantaneul repară starea. |
 
 ## 4. Candidați de caz identificați în M1
 
