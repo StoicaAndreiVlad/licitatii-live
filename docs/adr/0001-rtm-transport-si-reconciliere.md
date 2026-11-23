@@ -32,7 +32,7 @@ testul de încărcare, acoperit la curs. Corectitudinea nu depinde de garanțiil
 
 - RTM-1: 20 clienți, 100 oferte → toți converg la starea din DB; p95 întârziere `commit → recepție` ≤ 300 ms.
 - RTM-2: reconectare forțată cu 3 oferte ratate → convergență.
-- RTM-3: evenimente permutate (`5, 7, 6, 6`) → fără regres de stare.
+- RTM-3: evenimente permutate (`5, 7, 6, 6`) → `7` declanșează `needsResync` fără a fi aplicat, duplicatul `6` este ignorat, iar după instantaneu starea corespunde `seq = 7`, fără regres de stare.
 - RTM-4..6: autorizare la handshake, la `auction:join` și ignorarea mesajelor de scriere de la client.
 
 Rezultatele (tabele, grafice, comenzi de reproducere) se adaugă aici în M2/M3.
