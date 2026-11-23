@@ -91,7 +91,7 @@ docs/     documentația proiectului
 | Alternative pentru cele două pachete | [packages/](docs/packages/), [adr/](docs/adr/) |
 | Model / profil de sarcină | [capacity.md](docs/capacity.md) |
 | Plan de teste | [testing.md](docs/testing.md) |
-| Schelet executabil | `npm install && npm run seed && npm test && npm run dev:server` — 58 teste (API, constrângeri DB, seed, invariante, reguli de ofertare) |
+| Schelet executabil | `npm install && npm run seed && npm test && npm run dev:server` — 139 teste backend (API, constrângeri DB, seed, invariante, reguli de ofertare, mașina de stări) + 4 teste client (`npm test -w client`) |
 
 ## Echipa și împărțirea muncii (propunere)
 
