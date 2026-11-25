@@ -64,12 +64,12 @@ verificările → diagnostichează → reparație țintită → verifică → ex
 | Câmp | Conținut |
 |---|---|
 | Student | Stilpeanu Tudor |
-| Cerință | Reducerul client `applyAuctionEvent(state, event)` pentru pachetul RTM: starea afișată nu are voie să regreseze când evenimentele live ajung în altă ordine sau duplicate (fișa temei: „cel puțin două evenimente sosite în ordine diferită la client”). |
-| Intervenția agentului | Propunerea generată cu Claude Code punea evenimentele „din viitor” (`seq > lastSeq + 1`) într-o listă `pending` și le aplica automat când soseau cele lipsă, cu o limită `MAX_PENDING` și resincronizare doar dacă golul persista. |
-| Inspecție | Am comparat propunerea cu analiza RTM și cu ADR-0001. Documentele spuneau „gol ⇒ resincronizare”, iar codul propus făcea altceva (buffer + aplicare întârziată). Contractul dintre document și implementare nu mai era același. |
-| Defect / limitare găsită | Nepotrivire între specificație și implementare. În plus, buffer-ul adăuga stare internă (`pending`) și cazuri-limită greu de explicat (duplicate în așteptare, depășirea limitei, interacțiunea cu instantaneul), pentru un câștig mic: serverul trimite oricum instantaneul complet la reconectare. |
-| Remediere | Am ales varianta mai simplă: la gol evenimentul nu se aplică, se setează `needsResync = true`, iar starea se reface din instantaneu (`version ≥ lastSeq`); instantaneele mai vechi și evenimentele cu `seq ≤ lastSeq` sunt ignorate. Am actualizat `docs/packages/rtm-timp-real.md` (R2, RTM-3, reconectarea) și ADR-0001 ca să descrie exact acest comportament. |
-| Rezultat | `npm test -w client` → 4/4 teste Vitest (ordine normală, gol + resincronizare, duplicat, instantaneu vechi); documentația RTM și codul spun același lucru. Commit-uri: `docs(rtm): revizuire analiză RTM și ADR-0001`, `feat(client): reconcilierea stării după seq`. Limită asumată: un tip de eveniment necunoscut nu consumă `seq`, deci declanșează o resincronizare la următorul eveniment — acceptabil, fiindcă instantaneul repară starea. |
+| Cerință | Funcția `applyAuctionEvent(state, event)` din client, pentru pachetul RTM. Ce se vede pe ecran nu trebuie să se întoarcă la o stare veche când evenimentele ajung în altă ordine sau de două ori. |
+| Intervenția agentului | Claude Code a scris funcția și testele U-RTM-1..4 după ce scrie în `architecture.md`: se aplică doar evenimentul cu `seq = lastSeq + 1`, cele cu `seq ≤ lastSeq` se ignoră, iar dacă lipsește un eveniment se setează `needsResync = true`. |
+| Inspecție | Am comparat codul cu documentele RTM și ADR-0001. Apoi am luat ordinea `5, 7, 6` și am urmărit-o pas cu pas: când vine `7` lipsește `6`, deci `7` nu se aplică și starea rămâne la `5`. |
+| Defect / limitare găsită | Documentele spuneau altceva decât codul. În RTM-3 scria că după `5, 7, 6` starea ajunge la `seq = 7`, dar `7` nu se aplică din cauza golului și ajunge în stare abia după ce se cere starea completă de la server. Testele treceau, dar documentația descria un comportament greșit. |
+| Remediere | Am schimbat documentele, nu codul: `docs/packages/rtm-timp-real.md` (R2, reconectarea, RTM-3) și ADR-0001 (RTM-3), ca să spună exact ce face funcția. |
+| Rezultat | `npm test -w client` dă 4/4 teste trecute (ordine normală, gol, duplicat, stare veche ignorată). Documentele și codul spun acum același lucru. Dacă vine un eveniment de un tip necunoscut, `seq` nu crește, iar următorul eveniment pare un gol și cere starea completă de la server. Nu e o problemă, pentru că starea se repară. |
 
 ## 4. Candidați de caz identificați în M1
 
